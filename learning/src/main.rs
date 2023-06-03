@@ -14,15 +14,15 @@ mod functions {
 	}
 
 	pub mod ints {
-		/// This will add 6 to an int
-		pub fn mutate_int(number: &mut i32) {
-			*number += 6;
-		}
+	/// This will add 6 to an int
+	pub fn mutate_int(number: &mut i32) {
+		*number += 6;
+	}
 
-		/// This will print an int
-		pub fn print_int(number: &i32) {
-			println!("int 32 : {}", number)
-		}
+	/// This will print an int
+	pub fn print_int(number: &i32) {
+		println!("int 32 : {}", number)
+	}
 
 	}
 
