@@ -1,58 +1,54 @@
+mod primative_functions;
+
+mod restaurant;
 
 
-mod functions {
-	pub mod strings {
-		/// This will appeand a word on to a string
-		pub fn mutate_string(flynn: &mut String) {
-			flynn.push_str("beaut");
-		}
+fn perform_primative_actions() {
+	let mut number: i32 = 12;
+	primative_functions::ints::mutate_int(&mut number);
+	primative_functions::ints::print_int(&number);
 
-		/// This will print a string
-		pub fn print_string(flynn: &String) {
-			println!("string is: {}",flynn);
-		}
-	}
+	let mut flynn: String = String::from("Flynn is a ");
+	primative_functions::strings::mutate_string(&mut flynn);
+	primative_functions::strings::print_string(&flynn);
 
-	pub mod ints {
-	/// This will add 6 to an int
-	pub fn mutate_int(number: &mut i32) {
-		*number += 6;
-	}
+	let mut true_or_false: bool = true;
+	primative_functions::booleans::mutate_boolean(&mut true_or_false);
+	primative_functions::booleans::print_boolean(&true_or_false);
+}
 
-	/// This will print an int
-	pub fn print_int(number: &i32) {
-		println!("int 32 : {}", number)
-	}
+fn perform_restaurant_actions() {
+	let mut table_state: restaurant::TableState = restaurant::TableState::new();
 
-	}
+	let seat_customer = restaurant::SeatCustomer{
+		table: 1,
+		customer_name: "Ricky".to_string()
+	};
 
-	pub mod booleans {
-		pub fn mutate_boolean(boolean: &mut bool) {
-			*boolean = false;
-		}
+	let order = restaurant::Order { 
+		meal_name: "Chicken alfredo".to_string(), 
+		table: 1
+	};
 
-		pub fn print_boolean(boolean: &bool) {
-			println!("boolean is: {}", boolean)
-		}
+	let food_delivery = restaurant::Order { 
+		meal_name: "Chicken alfredo".to_string(), 
+		table: 1
+	};
 
-	}
-
+	table_state.perform_action(&restaurant::RestaurantAction::SeatCustomer(seat_customer));
+	table_state.perform_action(&restaurant::RestaurantAction::TakeOrder( order ));
+	table_state.perform_action(&restaurant::RestaurantAction::DeliverFood(food_delivery));
+	table_state.perform_action(&restaurant::RestaurantAction::CleanTable(1));
+	
 
 }
 
-
 fn main() {
-	let mut number: i32 = 12;
-	functions::ints::mutate_int(&mut number);
-	functions::ints::print_int(&number);
+	println!("----- Performing primative actions -----");
+	perform_primative_actions();
 
-	let mut flynn: String = String::from("Flynn is a ");
-	functions::strings::mutate_string(&mut flynn);
-	functions::strings::print_string(&flynn);
+	println!("\n----- Performing Restaurant actions -----");
+	perform_restaurant_actions();
 
-	let mut true_or_false: bool = true;
-	functions::booleans::mutate_boolean(&mut true_or_false);
-	functions::booleans::print_boolean(&true_or_false);
-
-    println!("Done.");
+    println!("\nDone.");
 }
