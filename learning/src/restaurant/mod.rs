@@ -18,6 +18,7 @@ pub enum RestaurantAction {
 	CleanTable(u8),
 }
 
+#[derive(Debug)]
 pub struct TableState {
 	pub customer_seated: bool,
 	pub order_taken: bool,
@@ -43,18 +44,22 @@ impl TableState {
 			RestaurantAction::SeatCustomer(seating) => {
 				self.customer_seated = true;
 				println!("Customer seated: {:?}", seating);
+				println!("State is now: {:#?}", self)
 			},
 			RestaurantAction::TakeOrder(order) => {
 				self.order_taken = true;
 				println!("Order taken: {:?}", order);
+				println!("State is now: {:#?}", self)
 			},
 			RestaurantAction::DeliverFood(delivery) => {
 				self.food_delivered = true;
 				println!("Food delivered: {:?}", delivery);
+				println!("State is now: {:#?}", self)
 			},
 			RestaurantAction::CleanTable(table) => {
 				self.table_cleaned = true;
 				println!("Table cleaned: {:?}", table);
+				println!("State is now: {:#?}", self)
 			}
 		}
 	}

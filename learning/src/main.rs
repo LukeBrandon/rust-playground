@@ -39,8 +39,6 @@ fn perform_restaurant_actions() {
 	table_state.perform_action(&restaurant::RestaurantAction::TakeOrder( order ));
 	table_state.perform_action(&restaurant::RestaurantAction::DeliverFood(food_delivery));
 	table_state.perform_action(&restaurant::RestaurantAction::CleanTable(1));
-	
-
 }
 
 fn main() {
