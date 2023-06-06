@@ -28,14 +28,40 @@ pub mod geocode {
 
 pub mod weather {
     use std::env;
+    use serde::{Serialize, Deserialize};
 
-    async fn fetch_weather(lat: &f64, lon: &f64) -> Result<reqwest::Response, reqwest::Error> {
-        let client = reqwest::Client::new();
+    #[derive(Debug)]
+    #[derive(Serialize, Deserialize)]
+    pub struct CurrentWeather {
+        temp_min: f64,
+        temp_max: f64,
+        feels_like: f64,
+        humidity: i32,
+    }
 
-        let api_key = env::var("WEATHER_KEY").unwrap();
+    #[derive(Debug)]
+    #[derive(Serialize, Deserialize)]
+    pub struct CurrentWind {
+        speed: f32,
+        gust: Option<f32>
+    }
 
-        let request_url = format!(
-            "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={api_key}",
+    #[derive(Debug)]
+    #[derive(Serialize, Deserialize)]
+    pub struct WeatherData {
+        main: CurrentWeather,
+        wind: CurrentWind
+    }
+
+    // async fn fetch_weather(lat: &f64, lon: &f64) -> Result<reqwest::Response, reqwest::Error> {
+    async fn fetch_weather(lat: &f64, lon: &f64) -> WeatherData {
+        let client: reqwest::Client = reqwest::Client::new();
+
+        let api_key: String = env::var("WEATHER_KEY").unwrap();
+
+        // API Reference:  https://openweathermap.org/current
+        let request_url: String = format!(
+            "https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}",
             lat = lat,
             lon = lon,
             api_key = api_key
@@ -43,18 +69,33 @@ pub mod weather {
 
         println!("{}", request_url);
 
-        let res = client.get(request_url).send().await;
+        let res: Result<reqwest::Response, reqwest::Error> = client.get(request_url).send().await;
+        let str_res: Result<WeatherData, reqwest::Error> = match res {
+            Ok(res) => res.json::<WeatherData>().await,
+            Err(_) => {
+                panic!();
+            }
+        };
 
-        return res;
+        let final_res: WeatherData = match str_res {
+            Ok(r) => r,
+            Err(e) => {
+                dbg!(e);
+                panic!();
+            }
+        };
+
+        // return res;
+        return final_res;
     }
 
-    pub fn weather_for_lat_lon(lat: &f64, lon: &f64) -> Result<reqwest::Response, reqwest::Error> {
-        let rt = tokio::runtime::Builder::new_current_thread()
+    pub fn weather_for_lat_lon(lat: &f64, lon: &f64) -> WeatherData {
+        let rt: tokio::runtime::Runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .unwrap();
 
-        let res = rt.block_on(async { fetch_weather(lat, lon).await });
+        let res: WeatherData = rt.block_on(async { fetch_weather(lat, lon).await });
         return res;
     }
 }
@@ -78,6 +119,7 @@ fn process_zip() -> String {
     }
 }
 
+use crate::weather::WeatherData;
 fn main() {
     print_welcome_message();
 
@@ -87,6 +129,15 @@ fn main() {
     let res = geocode::opencage_geocode(&zip);
     println!("Geocoded result is {:#?}", res);
 
-    let weather_res = weather::weather_for_lat_lon(&res.0.y, &res.0.x);
+    let weather_res: WeatherData = weather::weather_for_lat_lon(&res.0.y, &res.0.x);
     println!("Weather result is {:#?}", weather_res);
+
+    // match weather_res {
+    //     Ok(res) => {
+    //         println!("{:?}", res);
+    //     }
+    //     Err(e) => {
+    //         println!("{}", e);
+    //     }
+    // }
 }
