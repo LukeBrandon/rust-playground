@@ -1,143 +1,100 @@
-use std::env;
+use core::num::ParseIntError;
+use std::io;
 
-pub mod geocode {
-    use geocoding::{Forward, Opencage, Point};
-    use std::env;
-
-    fn geocode_opencage(zip_code: &String) -> Point {
-        // Initialize the Geocode client.
-        let api_key = env::var("OPENCAGE_KEY").unwrap();
-
-        let oc = Opencage::new(api_key.to_string());
-
-        let res: Vec<Point<f64>> = oc.forward(&zip_code).unwrap();
-        let first_result = res.get(0).unwrap();
-
-        println!(
-            "{longitude}, {latitude}",
-            longitude = first_result.x(),
-            latitude = first_result.y()
-        );
-        return *first_result;
-    }
-
-    pub fn opencage_geocode(zip: &String) -> Point {
-        return geocode_opencage(zip);
-    }
-}
-
-pub mod weather {
-    use std::env;
-    use serde::{Serialize, Deserialize};
-
-    #[derive(Debug)]
-    #[derive(Serialize, Deserialize)]
-    pub struct CurrentWeather {
-        temp_min: f64,
-        temp_max: f64,
-        feels_like: f64,
-        humidity: i32,
-    }
-
-    #[derive(Debug)]
-    #[derive(Serialize, Deserialize)]
-    pub struct CurrentWind {
-        speed: f32,
-        gust: Option<f32>
-    }
-
-    #[derive(Debug)]
-    #[derive(Serialize, Deserialize)]
-    pub struct WeatherData {
-        main: CurrentWeather,
-        wind: CurrentWind
-    }
-
-    // async fn fetch_weather(lat: &f64, lon: &f64) -> Result<reqwest::Response, reqwest::Error> {
-    async fn fetch_weather(lat: &f64, lon: &f64) -> WeatherData {
-        let client: reqwest::Client = reqwest::Client::new();
-
-        let api_key: String = env::var("WEATHER_KEY").unwrap();
-
-        // API Reference:  https://openweathermap.org/current
-        let request_url: String = format!(
-            "https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}",
-            lat = lat,
-            lon = lon,
-            api_key = api_key
-        );
-
-        println!("{}", request_url);
-
-        let res: Result<reqwest::Response, reqwest::Error> = client.get(request_url).send().await;
-        let str_res: Result<WeatherData, reqwest::Error> = match res {
-            Ok(res) => res.json::<WeatherData>().await,
-            Err(_) => {
-                panic!();
-            }
-        };
-
-        let final_res: WeatherData = match str_res {
-            Ok(r) => r,
-            Err(e) => {
-                dbg!(e);
-                panic!();
-            }
-        };
-
-        // return res;
-        return final_res;
-    }
-
-    pub fn weather_for_lat_lon(lat: &f64, lon: &f64) -> WeatherData {
-        let rt: tokio::runtime::Runtime = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-
-        let res: WeatherData = rt.block_on(async { fetch_weather(lat, lon).await });
-        return res;
-    }
-}
+mod geocode;
+mod weather;
 
 /// Prints the welcome message for the weather tool
 fn print_welcome_message() {
-    println!("Welcome to Luke's Rust weather command line tool.\n");
+    println!("----------------------------------------------------------------------\n");
+    println!("    Welcome to Luke's Rust weather command line tool.\n");
+    println!("    This tool was made to help Luke learn rust and use things like");
+    println!("      - Async web requests");
+    println!("      - Error handling");
+    println!("      - Rust modules\n");
+    println!("----------------------------------------------------------------------\n\n");
 }
 
-fn process_zip() -> String {
-    let args: Vec<String> = env::args().collect();
+#[derive(Debug)]
+enum UserInputError {
+    FiveDigitError(String),
+    StandardInputError(String),
+}
+/// Promps the user for a 5 digit zip code
+///   - Must be 5 digits, or returns FiveDigitError
+///   - Returns a StandardInputErrro(String) if stdin()::read_line encounters an error
+///
+/// Output: The 5 digit string, otherwise FiveDigitError
+fn read_5_digit_user_input() -> Result<String, UserInputError> {
+    let mut buffer: String = String::from("");
+    println!("Enter your 5-digit zip code: ");
 
-    let input = args.get(1);
+    io::stdin().read_line(&mut buffer).map_err(|_| {
+        UserInputError::StandardInputError("Error reading standard in: {e}".to_string())
+    })?; // Propogate None if fail
 
-    // This could also be done with .unwrap()
-    if let Some(z) = input {
-        z.to_string()
-    } else {
-        println!("No zip was provided, cancelling");
-        panic!();
+    let val: &str = buffer.trim();
+
+    if val.len() != 5 {
+        return Err(UserInputError::FiveDigitError(
+            "Input does not contain five digits.".to_string(),
+        ));
+    }
+
+    return Ok(val.to_string());
+}
+
+#[derive(Debug)]
+enum InvalidZipError {
+    UserInputError(UserInputError),
+    NonNumericError(ParseIntError),
+}
+
+// This tells rust how to convert from a UserInputError into a InvalidZipError this
+// is an idiomatic way of handling and extending errors allowing for use of the ? operator
+impl From<UserInputError> for InvalidZipError {
+    fn from(err: UserInputError) -> Self {
+        InvalidZipError::UserInputError(err)
     }
 }
 
-use crate::weather::WeatherData;
+/// The function reads user zip input doing the following
+///   - Read's user input for a zip code
+///   - Validates it is numeric
+///   - Returns the valid zip as a string or None if invalid
+///
+/// Output: A 5 digit numeric string or None
+fn read_user_zip_input() -> Result<String, InvalidZipError> {
+    let five_digit_string: String = read_5_digit_user_input()?;
+
+    match five_digit_string.parse::<i32>() {
+        Ok(_) => Ok(five_digit_string),
+        Err(e) => Err(InvalidZipError::NonNumericError(e)),
+    }
+}
+
 fn main() {
     print_welcome_message();
 
-    let zip = process_zip();
-    println!("Getting weather information for zip: {}", &zip);
+    // Run until we get a `Ok()` from `read_user_zip_input()`
+    let zip_code: String;
+    loop {
+        match read_user_zip_input() {
+            Ok(r) => {
+                zip_code = r;
+                break;
+            }
+            Err(err) => {
+                println!("Please provide valid input: {:?}\n\n", err)
+            }
+        }
+    }
 
-    let res = geocode::opencage_geocode(&zip);
-    println!("Geocoded result is {:#?}", res);
+    println!("Getting weather information for zip: {}", &zip_code);
 
-    let weather_res: WeatherData = weather::weather_for_lat_lon(&res.0.y, &res.0.x);
-    println!("Weather result is {:#?}", weather_res);
+    let res = geocode::opencage_geocode(&zip_code);
+    println!("Geocoded result is {:#?}\n", res);
 
-    // match weather_res {
-    //     Ok(res) => {
-    //         println!("{:?}", res);
-    //     }
-    //     Err(e) => {
-    //         println!("{}", e);
-    //     }
-    // }
+    let weather_res: weather::WeatherData = weather::weather_for_lat_lon(&res.0.y, &res.0.x);
+    println!("Weather result is {:#?}\n", weather_res);
 }
