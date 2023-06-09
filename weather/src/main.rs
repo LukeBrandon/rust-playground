@@ -1,5 +1,5 @@
 use core::num::ParseIntError;
-use std::io;
+use std::{io, process::exit};
 
 mod geocode;
 mod weather;
@@ -90,9 +90,14 @@ fn main() {
         }
     }
 
-    println!("Getting weather information for zip: {}", &zip_code);
+    println!("Getting weather information for zip code: {}", &zip_code);
 
-    let res = geocode::opencage_geocode(&zip_code);
+    let res = geocode::opencage_geocode(&zip_code).unwrap_or_else(|e| {
+        dbg!(e);
+        println!("Was not able to geocode your provided Zip code, please try again...");
+        exit(1);
+    });
+
     println!("Geocoded result is {:#?}\n", res);
 
     let weather_res: weather::WeatherData = weather::weather_for_lat_lon(&res.0.y, &res.0.x);
