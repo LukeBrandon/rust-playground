@@ -1,5 +1,7 @@
 use core::num::ParseIntError;
+use dotenv::dotenv;
 use std::{io, process::exit};
+use weather::WeatherUnits;
 
 mod geocode;
 mod weather;
@@ -74,6 +76,7 @@ fn read_user_zip_input() -> Result<String, InvalidZipError> {
 }
 
 fn main() {
+    dotenv().ok();
     print_welcome_message();
 
     // Run until we get a `Ok()` from `read_user_zip_input()`
@@ -100,6 +103,8 @@ fn main() {
 
     println!("Geocoded result is {:#?}\n", res);
 
-    let weather_res: weather::WeatherData = weather::weather_for_lat_lon(&res.0.y, &res.0.x);
-    println!("Weather result is {:#?}\n", weather_res);
+    // TODO: Implement user input or perferences for the units
+    weather::get_and_display_weather(&res.0.y, &res.0.x, WeatherUnits::Celcius);
+    println!("Fahrenheit");
+    weather::get_and_display_weather(&res.0.y, &res.0.x, WeatherUnits::Fahrenheit);
 }
