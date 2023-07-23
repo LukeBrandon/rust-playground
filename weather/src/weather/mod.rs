@@ -62,12 +62,19 @@ fn weather_for_lat_lon(lat: &f64, lon: &f64) -> WeatherData {
 ///   -
 pub fn get_and_display_weather(lat: &f64, lon: &f64, units: WeatherUnits) {
     let weather_data: WeatherData = weather_for_lat_lon(lat, lon);
+    println!("{:?}", weather_data);
     let units_char: char = match units {
         WeatherUnits::Celcius => 'C',
         WeatherUnits::Fahrenheit => 'F',
     };
-    let min_temp = weather_data.main.temp_min.to_fahrenheit();
-    let max_temp = weather_data.main.temp_min.to_fahrenheit();
+    let min_temp: f64 = match units {
+        WeatherUnits::Celcius => weather_data.main.temp_min.to_celcius(),
+        WeatherUnits::Fahrenheit => weather_data.main.temp_min.to_fahrenheit(),
+    };
+    let max_temp: f64 = match units {
+        WeatherUnits::Celcius => weather_data.main.temp_max.to_celcius(),
+        WeatherUnits::Fahrenheit => weather_data.main.temp_max.to_fahrenheit(),
+    };
 
     println!("Minimum Temperature: {:.1}{}", min_temp, units_char);
     println!("Maximum Temperature: {:.1}{}", max_temp, units_char);
