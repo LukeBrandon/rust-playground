@@ -105,6 +105,5 @@ fn main() {
 
     // TODO: Implement user input or perferences for the units
     weather::get_and_display_weather(&res.0.y, &res.0.x, WeatherUnits::Celcius);
-    println!("Fahrenheit");
     weather::get_and_display_weather(&res.0.y, &res.0.x, WeatherUnits::Fahrenheit);
 }
