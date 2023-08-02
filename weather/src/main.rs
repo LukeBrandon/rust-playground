@@ -101,8 +101,6 @@ fn main() {
         exit(1);
     });
 
-    println!("Geocoded result is {:#?}\n", res);
-
     // TODO: Implement user input or perferences for the units
     weather::get_and_display_weather(&res.0.y, &res.0.x, WeatherUnits::Celcius);
     weather::get_and_display_weather(&res.0.y, &res.0.x, WeatherUnits::Fahrenheit);

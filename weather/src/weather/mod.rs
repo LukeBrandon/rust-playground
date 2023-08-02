@@ -62,7 +62,6 @@ fn weather_for_lat_lon(lat: &f64, lon: &f64) -> WeatherData {
 ///   -
 pub fn get_and_display_weather(lat: &f64, lon: &f64, units: WeatherUnits) {
     let weather_data: WeatherData = weather_for_lat_lon(lat, lon);
-    println!("{:?}", weather_data);
     let units_char: char = match units {
         WeatherUnits::Celcius => 'C',
         WeatherUnits::Fahrenheit => 'F',
